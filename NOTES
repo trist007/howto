@@ -1,0 +1,47 @@
+/MT - static CRT, release
+/MTd - static CRT, debug (defines _DEBUG)
+/MD - dynamic CRT, release (links against msvcrt.dll)
+/MDd - dynamic CRT, debug (links against msvcrtd.dll)
+1. to ignore warnings
+
+#pragma warning(disable:4244; disable:4305)
+
+2. order
+
+ai()
+input()
+physics()
+render()
+
+3. collision code
+
+for (int i = 0; i < max_obj; ++i)
+{
+	for(int j = 0, j < i; ++j)
+	{
+		float d = dist(&obj[i].pos, &obj[j].pos);
+		if (d < obj[i].collision_radius + obj[j].collision_radius)
+		{
+			delete_object(i);
+			delete_object(j);
+		}	
+	}
+
+}
+
+struct String_View
+{
+	char *data;
+	size_t count;	
+};
+
+4. printf("%.*s\n", s.count, s.data);
+
+5. int array[6];
+sizeof(array) gives 24 6 ints x 4 bytes
+sizeof(array[0]) gives size of 1 element
+
+once you leave scope where array is declared array decays into a pointer without info
+so if you need to pass an array to a function make sure to pass the array count as well
+
+6. an int is signed by default
