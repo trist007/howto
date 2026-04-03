@@ -1,0 +1,205 @@
+Code Sections / Segments
+
+Pragma                   Description
+
+#pragma alloc_text("seg", func)
+                         Specify the code segment where named functions go. Function must be declared extern first.
+
+#pragma bss_seg(["seg"])
+                         Set the segment for uninitialized data (BSS). Supports push/pop with optional identifier.
+
+#pragma code_seg(["seg"])
+                         Set the segment for compiled function code. Supports push/pop.
+
+#pragma const_seg(["seg"])
+                         Set the segment for const data. Supports push/pop.
+#pragma data_seg(["seg"])
+                         Set the segment for initialized data. Supports push/pop.
+#pragma section("name" [, attrs])
+                         Create a named section in the .obj with optional attributes (read, write, execute, shared, nopage, nocache, discard, remove). Used with __declspec(allocate(...)).
+
+Optimization
+
+Pragma                   Description
+
+#pragma auto_inline(on|off)
+                         Enable/disable automatic inlining of functions.
+#pragma inline_depth(n)  Set max inline call depth (0–255).
+
+#pragma inline_recursion(on|off)
+                         Enable/disable inlining of recursive functions.
+#pragma intrinsic(func, ...)
+                         Tell the compiler to generate intrinsic (inline) versions of listed functions (e.g. memcpy, strlen, sqrt).
+
+#pragma function(func, ...)
+                         Opposite of intrinsic — force actual function calls instead of intrinsics.
+#pragma optimize("flags", on|off)
+                         Enable/disable specific optimizations per-function. Flags: g (global), s (size), t (speed), y (frame pointer). Empty string "" + off disables all.
+
+Struct / Memory Layout
+
+PragmaDescription
+
+#pragma pack([n])        Set struct member alignment to n bytes (1, 2, 4, 8, 16).
+
+#pragma pack(push [, id] [, n])
+                         Save current pack setting on a stack, optionally set new value.
+#pragma pack(pop [, id|n])
+                         Restore previously pushed pack setting.#pragma pack(show)Emit current pack value as a warning message.
+
+Warnings & Diagnostics
+
+Pragma                   Description
+
+#pragma warning(disable : nnnn ...)
+                         Disable specific warning numbers.
+#pragma warning(enable : nnnn ...)
+                         Enable specific warning numbers.
+#pragma warning(error : nnnn ...)
+                         Treat specific warnings as errors.
+#pragma warning(default : nnnn ...)
+                         Reset specific warnings to their default behavior.
+#pragma warning(once : nnnn ...)
+                         Show a specific warning at most once.
+#pragma warning(suppress : nnnn ...)
+                         Suppress warning for the next line only.
+#pragma warning(push [, n])
+                         Save current warning state (optionally set level to n).
+#pragma warning(pop)     Restore last saved warning state.
+
+#pragma message("text")  Print a message to the build output at compile time (doesn't stop compilation).
+
+#pragma deprecated(name, ...)
+                         Mark a function/type as deprecated; generates C4995 when used.
+#pragma detect_mismatch("name", "value")
+                         Embed a name/value record in the .obj; linker errors if mismatched across TUs. Useful for catching config mismatches.
+
+Linker / Object File
+
+Pragma                   Description
+
+#pragma comment(lib, "name.lib")
+                         Automatically link against a library (embeds lib name in .obj).
+#pragma comment(linker, "/flag")
+                         Pass a linker flag from source code (e.g. /INCLUDE:symbol).
+#pragma comment(compiler)
+                         Embed compiler name/version in the .obj.
+#pragma comment(user, "text")
+                         Embed a general text comment in the .obj.
+
+Runtime Checks
+
+Pragma                   Description
+
+#pragma runtime_checks("checks", restore|off)
+                         Enable/disable runtime checks set by /RTC. Checks: s (stack), u (uninitialized), c (type conversion).
+
+#pragma check_stack(on|off)
+                         Enable/disable stack probes for the functions that follow.
+#pragma strict_gs_check(push) / (pop) / (on|off)
+                         Force stack buffer security checks (/GS) even on functions the compiler wouldn't normally protect.
+
+Floating Point
+
+Pragma                   Description
+
+#pragma fenv_access(on|off)
+                         Tell the compiler whether the code accesses the FP environment
+ (rounding mode, status flags). Disables FP optimizations that would break that.
+
+#pragma float_control(precise, on|off)
+                         Enable/disable precise FP model.
+
+#pragma float_control(except, on|off)
+                         Enable/disable FP exception semantics.
+
+#pragma float_control(push) / (pop)
+                         Save/restore float_control state.
+
+#pragma fp_contract(on|off)
+                         Allow/disallow FP contractions (e.g. fused multiply-add).
+
+Include / Header
+
+Pragma                   Description
+
+#pragma once             Include this file only once per translation unit.
+
+#pragma hdrstop          Mark the end of the precompiled header region. Everything before this line goes into the PCH.
+
+#pragma include_alias("orig", "alias")
+                         Map one include filename to another.
+
+#pragma system_header    Treat the rest of this file as a system header (suppress warnings inside it). Useful when writing your own headers you want to treat as external.
+
+Managed / CLR (C++/CLI)
+
+Pragma                   Description
+
+#pragma managed          Compile subsequent functions as managed (CLR) code.
+
+#pragma unmanaged        Compile subsequent functions as native code, even inside a /clr TU.
+
+#pragma make_public(type)
+                         Give a native type public assembly visibility in a /clr build.
+
+C++ / OOP
+
+Pragma                   Description
+
+#pragma vtordisp(on|off|n)
+                         Control vtordisp hidden member generation for virtual base classes. Supports push/pop.
+
+#pragma pointers_to_members(type [, inherit])
+                         Control how pointers-to-members are represented. Types: full_generality, best_case, single_inheritance, multiple_inheritance, virtual_inheritance.
+
+Loop / Parallelism
+
+Pragma                   Description
+
+#pragma loop(hint_parallel(n))
+                         Hint that a loop should be parallelized across n threads.
+
+#pragma loop(no_vector)
+                         Prevent auto-vectorization of the next loop.
+
+#pragma loop(ivdep)      Assert no loop-carried data dependencies (enables vectorization).
+
+#pragma omp ...          OpenMP directives (parallel, for, sections, critical, barrier, etc.). Requires /openmp.
+
+Miscellaneous
+
+Pragma                   Description
+
+#pragma init_seg(compiler|lib|user|"seg")
+                         Control the order of global/static object initialization. compiler = earliest, user = latest.
+
+#pragma setlocale("locale")
+                         Set locale used during compilation for wide-char/string literals.
+
+#pragma component(browser, on|off)
+                         Enable/disable generation of browse info.
+
+#pragma component(minrebuild, on|off)
+                         Enable/disable minimal rebuild info tracking.
+
+#pragma conform(name, show|on|off|push|pop)
+                         Control conformance options (e.g. forScope). Mostly superseded by /Zc:.
+
+#pragma push_macro("name")
+                         Save the current definition of a macro onto a stack.
+
+#pragma pop_macro("name")
+                         Restore a previously pushed macro definition.
+
+#pragma region "name"    Mark a collapsible region in the editor (Visual Studio only, no semantic effect).
+
+#pragma endregion ["comment"]
+                         End a #pragma region block.
+
+A few notes worth keeping in mind:
+
+Many pragmas that affect data/code placement (bss_seg, data_seg, code_seg, const_seg, pack) support a push/pop stack so you can save and restore state around a block of code — very useful in header files.
+#pragma comment(lib, ...) is extremely common in Windows code as an alternative to passing .lib files on the linker command line.
+#pragma warning(push/pop) + disable is the idiomatic way to suppress warnings in a targeted region without affecting the rest of the TU.
+#pragma once is not technically standard C/C++ but is supported by essentially every modern compiler and is preferred over include guards in new code.
