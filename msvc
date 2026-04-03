@@ -1,0 +1,421 @@
+- when compiling use dynamic or static
+
+.dll — the actual dynamic library, loaded at runtime. It contains the compiled code and is required to run the program.
+
+.lib — the import library, used at link time. It doesn't contain the real code — just stubs and metadata that tell the linker which symbols are in the DLL and how to call them. This is what you pass to the linker (/DEFAULTLIB or directly on the link command).
+
+cl.exe flags
+
+Here's each flag broken down:
+Runtime & Basic
+
+-MT — Link the CRT (C Runtime) statically. Embeds the runtime into your binary so you don't need a separate MSVCRT DLL on the target machine.
+-nologo — Suppresses the MSVC copyright banner on compiler output.
+
+Floating Point
+
+-fp:fast — Allows the compiler to reorder/reassociate floating point ops and ignore strict IEEE 754 compliance for speed. Enables things like fused multiply-add.
+
+Code Generation
+
+-Gm- — Disables minimal rebuild. Explicitly turns off the feature that tracks dependencies to only recompile changed files (it's unreliable, so most people disable it).
+-GR- — Disables RTTI (Run-Time Type Information). No dynamic_cast or typeid. Reduces binary size.
+-EHa- — Disables C++ exception handling (the a variant would enable async/SEH exceptions, the - disables it entirely). No try/catch overhead.
+
+Optimization
+
+-Od — Disable all optimizations. Fast compilation, good for debugging.
+-Oi — Enable compiler intrinsics. Lets MSVC replace calls like memcpy, sqrt, etc. with inline CPU instructions even with -Od.
+
+Warnings
+
+-WX — Treat all warnings as errors.
+-W4 — Warning level 4 (high, but not all warnings like -Wall).
+-wd4201 — Suppress: nameless struct/union (common in game math code).
+-wd4100 — Suppress: unreferenced formal parameter.
+-wd4189 — Suppress: local variable initialized but not referenced.
+-wd4244 — Suppress: conversion, possible loss of data (e.g. float → int).
+-wd4996 — Suppress: deprecated function warnings (e.g. strcpy, POSIX names).
+-wd4456 — Suppress: declaration hides previous local variable.
+
+Debug Info
+
+-FC — Print full path of source files in diagnostics and __FILE__. Useful when errors are parsed by an editor.
+-Z7 — Embed debug info directly into the .obj files (old C7 format) rather than a separate .pdb. Simpler setup, good for single-target debug builds.
+
+- Example build.bat
+
+@echo off
+
+echo Compilation started at %date% %time%
+echo,
+
+set SDL_LIB=..\chronicles\external\SDL3-3.4.2\lib\x64\SDL3.lib
+set SDLIMAGE_LIB=..\chronicles\external\SDL3_image-3.4.0\lib\x64\SDL3_image.lib
+set SDLTTF_LIB=..\chronicles\external\SDL3_ttf-3.2.2\lib\x64\SDL3_ttf.lib
+set SDL_Include=/I"..\chronicles\external\SDL3-3.4.2\include"
+set SDLIMAGE_Include=/I"..\chronicles\external\SDL3_image-3.4.0\include"
+set SDLTTF_Include=/I"..\chronicles\external\SDL3_ttf-3.2.2\include"
+
+set CommonCompilerFlags=-MT -nologo -fp:fast -Gm- -GR- -EHa- -Od -Oi -WX -W4 -wd4201 -wd4100 -wd4189 -wd4244 -wd4996 -wd4456 -FC -Z7 %SDL_Include% %SDLIMAGE_Include% %SDLTTF_Include%
+
+set CommonLinkerFlags=-incremental:no -opt:ref /DEBUG /PDB:main.pdb %SDL_LIB% %SDLIMAGE_LIB% %SDLTTF_LIB% user32.lib gdi32.lib winmm.lib shell32.lib kernel32.lib /SUBSYSTEM:WINDOWS
+
+REM echo Updating etags
+REM echo,
+REM etags *.cpp *.h raylib\*.c
+
+IF NOT EXIST .\..\build mkdir ..\..\build
+pushd ..\..\build
+copy /Y ..\chronicles\external\SDL3-3.4.2\lib\x64\SDL3.dll . > NUL
+copy /Y ..\chronicles\external\SDL3_image-3.4.0\lib\x64\SDL3_image.dll . > NUL
+copy /Y ..\chronicles\external\SDL3_ttf-3.2.2\lib\x64\SDL3_ttf.dll . > NUL
+
+REM delete pdb because debugger maintains a lock on pdb so pdb cannot be overwritten
+del *.pdb > NUL 2> NUL
+
+cl %CommonCompilerFlags% ..\chronicles\code\main.cpp /link %CommonLinkerFlags%
+REM/Fe:win32_arwin.exe
+
+popd
+
+echo.
+if %errorlevel% equ 0 (
+                       echo Compilation finished at %date% %time%
+                       ) else (
+                               echo Compilation failed with errors at %date% %time%
+                               )
+
+- full list of flags
+
+Optimization
+
+Flag               Description
+
+/O1                Optimize for minimum size (enables a bundle of size-favoring opts)
+/O2                Optimize for maximum speed (enables a bundle of speed-favoring opts)
+/Ob<n>             Control inline expansion: 0=none, 1=only marked, 2=any suitable, 3=aggressive
+ /Od               Disable all optimizations
+/Og                Deprecated. Global optimizations
+/Oi[-]             Enable/disable compiler intrinsics
+/Os                Favor small code size
+/Ot                Favor fast code speed
+/Ox                Subset of /O2 without /GF or /Gy
+/Oy                Omit frame pointer (x86 only)
+/favor:<blend|AMD64|INTEL64|ATOM>
+                   Tune output for specific CPU architecture
+/dynamicdeoptEnable
+                   C++ Dynamic Debugging (debug optimized code as if unoptimized)
+
+Code Generation
+
+Flag               Description
+
+/arch              Set minimum CPU architecture requirements (e.g. /arch:AVX2)
+/clr               Target the CLR (.NET); many sub-options below
+/clr:implicitKeepAlive-
+                   Turn off implicit GC::KeepAlive(this) emission
+/clr:initialAppDomain
+                   Use VS2002 AppDomain behavior
+/clr:netcore       Target .NET Core runtime
+/clr:noAssembly    Deprecated. Don't produce assembly
+/clr:nostdimport   Don't implicitly import required assemblies
+/clr:nostdlib      Ignore system .NET framework directory
+/clr:pure          IL-only output, no native code
+/clr:safe          IL-only verifiable output
+/EHa               Enable C++ exception handling including async/SEH exceptions
+/EHc               extern "C" defaults to nothrow
+/EHr               Always generate noexcept runtime termination checks
+/EHs               Enable C++ exception handling, no SEH
+/fp:contract       Allow floating-point contractions (e.g. FMA)
+/fp:except[-]      Consider FP exceptions when generating code
+/fp:fast           Fast FP; non-IEEE-compliant, allows reordering
+/fp:precise        Predictable, IEEE-compliant FP (default)
+/fp:strict         Strictest FP; implies /fp:except
+/fpcvt:BC          Backward-compatible float-to-unsigned-int conversions
+/fpcvt:IA          Intel-native float-to-unsigned-int behavior
+/fsanitize         Enable sanitizer instrumentation (e.g. AddressSanitizer)
+/fsanitize-coverage
+                   Enable code coverage instrumentation (e.g. for LibFuzzer)
+/GA                Optimize TLS access for Windows apps
+/Gd                Use __cdecl calling convention (x86 only)
+/Ge                Deprecated. Activate stack probes
+/GF                String pooling — merge identical string literals
+/Gh                Call _penter hook at function entry
+/GH                Call _pexit hook at function exit
+/GL[-]             Whole program optimization (required for LTCG)
+/Gm[-]             Deprecated. Minimal rebuild
+/Gr                Use __fastcall calling convention (x86 only)
+/GR[-]             Enable/disable RTTI
+/GS[-]             Buffer security checks (stack cookies)
+/Gs[n]             Control stack probe threshold size
+/GT                Fiber-safe thread-local storage
+/Gu[-]             Ensure distinct functions have distinct addresses
+/guard:cf[-]       Enable Control Flow Guard
+/guard:ehcont[-]   Enable EH continuation metadata
+/Gv                Use __vectorcall calling convention (x86/x64 only)
+/Gw[-]             Whole-program global data optimization
+/GX[-]             Deprecated. Synchronous exception handling; use /EH
+/Gy[-]             Function-level linking (put each function in its own COMDAT)
+/Gz                Use __stdcall calling convention (x86 only)
+/GZ                Deprecated. Same as /RTC1
+/homeparams        Force register params written to stack on entry (x64 only)
+/hotpatch          Create hotpatchable image (ensures 2-byte first instruction)
+/jumptablerdata    Put switch jump tables in .rdata instead of .text
+/Qfast_transcendentals
+                   Use fast inline transcendental functions (sin, cos, etc.)
+/QIfist            Deprecated. Suppress _ftol call for float-to-int conversion (x86)
+/Qimprecise_fwaits Remove fwait inside try blocks
+/QIntel-jcc-erratum
+                   Mitigate Intel JCC erratum performance impact
+/Qpar              Auto-parallelize loops
+/Qpar-report:n     Reporting level for auto-parallelization
+/Qsafe_fp_loads    Use integer moves for FP values; disable some FP load opts
+/Qspectre[-]       Mitigate Spectre variant 1 (CVE-2017-5753)
+/Qspectre-load     Insert serializing instructions after every load
+/Qspectre-load-cf  Insert serializing instructions after control flow loads
+/Qvec-report:n     Reporting level for auto-vectorization
+/RTC1              Enable fast runtime checks (equivalent to /RTCsu)
+/RTCc              Check conversions to smaller types at runtime
+/RTCs              Stack frame runtime checks
+/RTCu              Check for use of uninitialized locals
+/vlen              Specify vector length
+/volatile:iso      volatile follows ISO C++ (no acquire/release guarantee)
+/volatile:ms       volatile has acquire/release semantics (MSVC default)
+/feature           Enable architecture features (ARM64, VS 17.10+)
+/forceInterlockedFunctions
+                   Dynamic selection between Armv8.0/8.1 atomic instructions (VS 17.14+)
+
+Output Files
+
+Flag               Description
+
+/doc               Process XML documentation comments to file
+/FA                Configure assembly listing file (source, machine code, etc.)
+/Fa                Set assembly listing file path
+/Fd                Rename the PDB file
+/Fe                Rename the output executable
+/Fi                Set preprocessed output file name
+/Fm                Generate a mapfile
+/Fo                Set object file name/directory
+/Fp                Specify precompiled header (.pch) file name
+/FR, /Fr           Generate .sbr browser info file (/Fr deprecated)
+/Ft<dir>           Directory for header files generated by #import
+
+Preprocessor
+
+Flag               Description
+
+/AI<dir>           Directory for #using file references
+/C                 Preserve comments in preprocessor output
+/D<name>[=val]     Define a preprocessor macro
+/E                 Preprocess to stdout
+/EP                Preprocess to stdout without #line directives
+/FI<file>          Force-include a file (as if #include at top of every TU)
+/FU<file>          Force #using of a file
+/Fx                Merge injected code into source file
+/I<dir>            Add include search directory
+/P                 Preprocess to a .i file
+/PD                Print all macro definitions
+/PH                Generate #pragma file_hash during preprocessing
+/U<name>           Undefine a specific predefined macro
+/u                 Undefine all predefined macros
+/X                 Ignore standard include directories
+
+C++ Modules / Header Units
+
+Flag               Description
+
+/exportHeader      Build .ifc header unit files from specified headers
+/headerUnit        Map a header file to its .ifc
+/headerName        Build a header unit from a named header
+/ifcOutput         Set output name/directory for .ifc files
+/interface         Treat input as a module interface unit
+/internalPartition Treat input as an internal partition unit
+/reference         Supply a named module IFC
+/scanDependencies  Emit module/header unit dependencies as JSON
+/sourceDependencies
+                   List all source-level dependencies
+/sourceDependencies:directives
+                   List module/header unit dependencies only
+/translateInclude  Treat #include as import where possible
+
+Language
+
+Flag               Description
+
+/await             Enable coroutine extensions
+/await:strict      Enable standard C++20 coroutines in earlier language modes
+/constexpr:backtrace<N>
+                   Show N constexpr evaluations in diagnostics (default 10)
+/constexpr:depth<N>
+                   constexpr recursion depth limit (default 512)
+/constexpr:steps<N>
+                   Terminate constexpr after N steps (default 100000)
+/openmp            Enable OpenMP 2.0 (#pragma omp)
+/openmp:experimental
+                   OpenMP 2.0 + select 3.0+ extensions
+/opeknmp:llvm      OpenMP using LLVM runtime
+/permissive[-]     Standards conformance mode (disables MSVC extensions)
+/std:c++14         Target C++14 (default)
+/std:c++17         Target C++17
+/std:c++20         Target C++20
+/std:c++latest     Target latest draft C++ standard
+/std:c11           Target C11
+/std:c17           Target C17
+/std:clatest       Target latest draft C standard
+/vd{0|1|2}         Control vtordisp hidden members
+/vmb               Use best-base pointer-to-member representation
+/vmg               Use full-generality pointer-to-member representation
+/vmm               Declare multiple inheritance
+/vms               Declare single inheritance
+/vmv               Declare virtual inheritance
+/Z7                Embed debug info in .obj (C7 format, no PDB)
+/Za                Disable some C89 MSVC language extensions
+/Zc:__cplusplus[-] Make __cplusplus macro report actual standard version
+/Zc:__STDC__       Enable __STDC__ macro
+/Zc:alignedNew[-]  C++17 over-aligned dynamic allocation
+/Zc:auto[-]        Enforce C++ meaning of auto
+/Zc:char8_t[-]     u8 literals as const char8_t (C++20)
+/Zc:enumTypes[-]   Standard rules for inferred enum base types
+/Zc:externC[-]     Standard extern "C" rules
+/Zc:externConstexpr[-]
+                   External linkage for constexpr variables
+/Zc:forScope[-]    Standard for loop scoping
+/Zc:gotoScope      Standard goto rules around local variable init
+/Zc:hiddenFriend[-]
+                   Standard hidden friend rules
+/Zc:implicitNoexcept[-]
+                   Implicit noexcept on required functions
+/Zc:inline[-]      Remove unreferenced COMDATs/internal linkage items
+/Zc:lambda[-]      New lambda processor for conformance checks
+/Zc:noexceptTypes[-]
+                   C++17 noexcept rules
+/Zc:nrvo[-]        Enable optional copy/move elision (NRVO)
+/Zc:preprocessor[-]
+                   Use new conforming preprocessor
+/Zc:referenceBinding[-]
+                   Disallow temporary binding to non-const lvalue ref
+/Zc:rvalueCast[-]  Enforce standard explicit type conversion rules
+/Zc:sizedDealloc[-]
+                   C++14 global sized deallocation
+/Zc:strictStrings[-]
+                   Disable string literal to char* implicit conversion
+/Zc:templateScope[-]
+                   Standard template parameter shadowing rules
+/Zc:ternary[-]     Enforce standard conditional operator rules
+/Zc:threadSafeInit[-]
+                   Thread-safe local static initialization
+/Zc:throwingNew[-] Assume operator new throws on failure
+/Zc:tlsGuards[-]   Runtime checks for TLS variable initialization
+/Zc:trigraphs      Enable trigraph substitution (obsolete)
+/Zc:twoPhase[-]    Two-phase template name lookup
+/Zc:wchar_t[-]     wchar_t is a native type, not a typedef
+/Zc:zeroSizeArrayNew[-]
+                   Call member new/delete for 0-size arrays
+/Ze                Deprecated. Enable C89 MSVC extensions
+/Zf                Faster PDB generation in parallel builds
+/ZH:[MD5|SHA1|SHA_256]
+                   Hash algorithm for checksums in debug info
+/ZI                PDB with Edit and Continue support (x86 only)
+/Zi                Full debug info in separate PDB
+/Zl                Omit default library name from .obj
+/Zo[-]             Richer debug info for optimized builds
+/Zp[n]             Set struct member alignment (1, 2, 4, 8, 16)
+/Zs                Syntax check only, no output
+/ZW                Target Windows Runtime (WinRT)
+
+Linking (flags passed to cl that affect linking)
+
+Flag               Description
+
+/F                 Set stack size
+/LD                Build a DLL
+/LDd               Build a debug DLL
+/link              Pass remaining args directly to link.exe
+/LN                Create an MSIL .netmodule
+/MD                Link dynamically against MSVCRT.lib (multithreaded DLL CRT)
+/MDd               Link dynamically against MSVCRTD.lib (debug)
+/MT                Link statically against LIBCMT.lib (multithreaded CRT)
+/MTd               Link statically against LIBCMTD.lib (debug)
+
+Diagnostics / Warnings
+
+Flag               Description
+
+/diagnostics:caret[-]
+                   Show column + caret indicator in diagnostics
+/diagnostics:classic
+                   Legacy diagnostic formatx
+/diagnostics       Show column info in diagnostics
+/external:anglebrackets
+                   Treat <> includes as external headers
+/external:env:<var>
+                   Env variable pointing to external header locations
+/external:I <path> Specify external header location
+/external:templates[-]
+                   Propagate warning level through template instantiations
+/external:W<n>     Set warning level for external headers
+/options:strict    Unrecognized options are errors
+/sdl               Enable additional security checks and warnings
+/w                 Disable all warnings
+/W0–/W4            Warning level 0 (none) through 4 (high)
+/w1<n>, /w2<n>, /w3<n>, /w4<n>
+                   Set a specific warning to a specific level
+/Wall              Enable all warnings including off-by-default ones
+/wd<n>             Disable a specific warning number
+/we<n>             Treat a specific warning as an error
+/WL                One-line diagnostics for errors/warnings
+/wo<n>             Show a specific warning only once
+/Wv:xx[.yy[.zzzzz]]
+                   Suppress warnings introduced after a given compiler version/WXTreat all warnings as errors
+
+Miscellaneous
+
+Flag               Description
+
+/? / /HELP         Print compiler option list
+@<file>            Read options from a response file
+/analyze           Enable static code analysis
+/bigobj            Increase number of addressable sections in .obj (needed for large TUs)
+/c                 Compile only, don't link
+/cgthreads         Number of threads for code generation
+/errorReport       Deprecated. Controlled by WER now
+/execution-charset
+                   Set execution character set
+/fastfail          Enable fast-fail mode (immediate process termination on bad state)
+/FC                Show full source file paths in diagnostics
+/FS                Serialize PDB writes through MSPDBSRV.EXE (for parallel builds)
+/H                 Deprecated. Restrict external name length
+/J                 Make default char type unsigned
+/JMC               Just My Code debugging support
+/kernel            Build a Windows kernel-mode binary
+/MP                Parallel compilation (use multiple processes)
+/nologo            Suppress compiler banner
+/presetPadding     Zero-initialize padding in stack-based class types
+/showIncludes      Print all #include files during compilation
+/source-charset    Set source file character set
+/Tc<file>          Treat specific file as C source
+/TC                Treat all files as C source
+/Tp<file>          Treat specific file as C++ source
+/TP                Treat all files as C++ source
+/utf-8             Set both source and execution charset to UTF-8
+/V                 Deprecated. Set version string in .obj
+/validate-charset  Validate UTF-8 source for compatible characters
+/volatileMetadata  Generate metadata on volatile memory accesses
+/Yc                Create a precompiled header file
+/Yd                Deprecated. Put full debug info in all .obj files
+/Yl                Inject PCH reference into debug library
+/Yu                Use a precompiled header file
+/Y-                Ignore all precompiled header options
+/Zm                Precompiled header memory allocation limit
+
+Experimental
+
+Flag               Description
+
+/experimental:log  Structured SARIF diagnostic output
+/experimental:module
+                   Experimental module support
+
+Flags marked ⚠️ are deprecated or removed — avoid them in new code. The /Zc: family is particularly useful for dialing in standards conformance without going full /permissive-.
