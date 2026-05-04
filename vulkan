@@ -1,0 +1,51 @@
+: make sure vulkan-1.dll is being loaded
+
+    // Try to load the DLL directly
+    HMODULE hVulkan = LoadLibraryA("vulkan-1.dll");
+    if (hVulkan)
+    {
+        SDL_Log("✅ SUCCESS: vulkan-1.dll was loaded via LoadLibrary");
+        FreeLibrary(hVulkan);
+    }
+    else
+    {
+        SDL_Log("❌ FAILED to load vulkan-1.dll");
+        SDL_Log("   Windows Error Code: %lu", GetLastError());
+
+        // Common error explanations
+        if (GetLastError() == 126) {
+            SDL_Log("   (Error 126 = The specified module could not be found)");
+        }
+        else if (GetLastError() == 193) {
+            SDL_Log("   (Error 193 = Not a valid Win32 application - 32/64 bit mismatch?)");
+        }
+    }
+
+    if(volkInitialize() != VK_SUCCESS)
+    {
+        SDL_Log("Failed to initialize Volk");
+        abort();
+    }
+
+    SDL_Log("Initialized volk");
+
+
+if (hVulkan)
+{
+    SDL_Log("✅ LoadLibrary succeeded");
+
+    // Manually get the main Vulkan function
+    PFN_vkGetInstanceProcAddr pfnGetInstanceProcAddr = 
+        (PFN_vkGetInstanceProcAddr)GetProcAddress(hVulkan, "vkGetInstanceProcAddr");
+
+    if (pfnGetInstanceProcAddr)
+    {
+        SDL_Log("✅ Found vkGetInstanceProcAddr at %p", pfnGetInstanceProcAddr);
+    }
+    else
+    {
+        SDL_Log("❌ GetProcAddress failed for vkGetInstanceProcAddr");
+    }
+
+    FreeLibrary(hVulkan);
+}
