@@ -100,3 +100,14 @@ Common Use Cases in Handmade/Low-Level CCache-line alignment (usually 64 bytes)
 SIMD vector alignment (16, 32, or 64 bytes)
 Ensuring struct members are properly aligned for performance
 Page alignment (4096 bytes) for memory-mapped stuff
+
+: snprintf and strlen
+this function does add a null byte terminator if the size of bytes to copy is 8 bytes and the string is also 8 bytes
+then it will only copy 7 bytes of the string and use the last byte for the null terminator
+strlen also gets number of bytes before 00 and like snprintf does not count the null terminator 00
+
+: strncpy if you give it 8 bytes to write and the string is 8 bytes then it will write 8 bytes and not include null terminator, if 
+string is 7 bytes then it will use the last byte for null terminator	
+
+: __VA_ARGS__ only allowed in macros that use ...
+#define Log(...) SDL_Log(__VA_ARGS__)
