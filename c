@@ -111,3 +111,28 @@ string is 7 bytes then it will use the last byte for null terminator
 
 : __VA_ARGS__ only allowed in macros that use ...
 #define Log(...) SDL_Log(__VA_ARGS__)
+
+: u32 and when to use int or size_t
+u64
+Default for sizes, counts, indices, offsets, positions, memory amounts
+String8.size, arena positions, loop counters, array lengths, file sizes, hashes
+
+u32
+When you're sure < 4 GB is enough and you want to save space (rare)
+Small buffers, entity counts, bitfields
+
+u8/u16
+Bytes, small enums, packed data
+Pixel values, flags, network packets
+
+b32
+Booleans (your style)
+B32 is_valid;
+
+int
+Avoid in new code — only for APIs that demand it or small signed values
+Return codes from some OS functions, loop variables when negative makes sense
+
+size_t
+Only when calling C standard library or platform APIs that expect it
+malloc, fread, memset, some sizeof arithmetic
