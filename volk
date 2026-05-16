@@ -1,0 +1,43 @@
+: debug volk
+    SDL_Log("=== Volk Debug ===");
+    SDL_Log("VULKAN_SDK = %s", getenv("VULKAN_SDK") ? getenv("VULKAN_SDK") : "NOT SET");
+
+    // === MANUAL VOLK INITIALIZATION (Bypass) ===
+    SDL_Log("Trying manual Volk initialization...");
+
+    HMODULE hVulkan = LoadLibraryA("vulkan-1.dll");
+    if (!hVulkan)
+    {
+        SDL_Log("Failed to load vulkan-1.dll");
+        abort();
+    }
+
+    PFN_vkGetInstanceProcAddr pfnGetInstanceProcAddr =
+        (PFN_vkGetInstanceProcAddr)GetProcAddress(hVulkan, "vkGetInstanceProcAddr");
+
+    if (!pfnGetInstanceProcAddr)
+    {
+        SDL_Log("Failed to get vkGetInstanceProcAddr");
+        FreeLibrary(hVulkan);
+        abort();
+    }
+
+    SDL_Log("✓ Got vkGetInstanceProcAddr manually");
+
+    // Tell Volk to use our loader
+    volkInitializeCustom(pfnGetInstanceProcAddr);
+
+    SDL_Log("✅ volkInitializeCustom succeeded!");
+    FreeLibrary(hVulkan);   // Volk keeps its own reference
+
+
+static PFN_vkGetPhysicalDeviceProperties s_pfnGetPhysicalDeviceProperties = NULL;
+static PFN_vkGetPhysicalDeviceQueueFamilyProperties   s_pfnGetPhysicalQueueFamilyProperties = NULL;
+static PFN_vkEnumeratePhysicalDevices   s_pfnEnumeratePhysicalDevices = NULL;
+static PFN_vkAllocateCommandBuffers s_pfnAllocateCommandBuffers = NULL;
+
+// watch func ptr
+s_pfnGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+s_pfnGetPhysicalQueueFamilyProperties = vkGetPhysicalDeviceQueueFamilyProperties;
+s_pfnEnumeratePhysicalDevices   = vkEnumeratePhysicalDevices;
+s_pfnAllocateCommandBuffers = vkAllocateCommandBuffers;

@@ -1,0 +1,15 @@
+: change the colorscheme
+in AppData\Local\nvim\lua\plugins\colorscheme.lua
+
+return {
+  -- add gruvbox
+  { "navarasu/onedark.nvim" },
+
+  -- Configure LazyVim to load gruvbox
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "onedark",
+    },
+  }
+}
