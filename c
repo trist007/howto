@@ -57,6 +57,51 @@ Used with                       #pragma comment(lib, "xx.lib")    Same as static
 : how to tell if .lib is a static lib or an import lib
 lib /list YourLibrary.lib
 
+static lib looks like
+C:\dev\raylib\build\raylib>lib /list raylib.lib
+Microsoft (R) Library Manager Version 14.43.34809.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+raylib\external\glfw\src\CMakeFiles\glfw.dir\context.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\init.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\input.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\monitor.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\platform.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\vulkan.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\window.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\egl_context.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\osmesa_context.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\null_init.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\null_monitor.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\null_window.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\null_joystick.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_module.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_time.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_thread.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_init.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_joystick.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_monitor.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\win32_window.c.obj
+raylib\external\glfw\src\CMakeFiles\glfw.dir\wgl_context.c.obj
+raylib\CMakeFiles\raylib.dir\raudio.c.obj
+raylib\CMakeFiles\raylib.dir\rcore.c.obj
+raylib\CMakeFiles\raylib.dir\rmodels.c.obj
+raylib\CMakeFiles\raylib.dir\rshapes.c.obj
+raylib\CMakeFiles\raylib.dir\rtext.c.obj
+raylib\CMakeFiles\raylib.dir\rtextures.c.obj
+
+import lib looks like
+C:\dev\aitd\arwin\code>lib /list raylib.lib
+Microsoft (R) Library Manager Version 14.43.34809.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+raylib.dll
+raylib.dll
+raylib.dll
+raylib.dll
+raylib.dll
+raylib.dll
+
 static - shows many .obj files
 import - shows no .obj files often shows .dll names or just a smaller number of entries __imp__
 
