@@ -1,0 +1,66 @@
+One Time Setup (Call Once at Init)
+create_instance()
+select_physical_device()
+create_logical_device()
+create_surface()
+create_swapchain()
+create_image_views()
+setup_dynamic_rendering()
+create_graphics_pipeline()
+create_command_pool()
+allocate_command_buffers()
+create_sync_objects()        ← semaphores and fences, easy to forget
+
+Every Frame (Call in Game Loop)
+draw_frame()
+    ├── wait_for_fence()              ← wait for previous frame to finish
+    ├── acquire_swapchain_image()     ← get next image index
+    ├── reset_command_buffer()        ← clear last frame's commands
+    ├── record_command_buffer()       ← record new draw commands
+    ├── submit_command_buffer()       ← submit to GPU queue
+    └── present_image()              ← return image to swapchain for display
+
+Needs to Be Re-run on Window Resize
+destroy_swapchain()
+create_swapchain()
+create_image_views()
+This is called swapchain recreation and catches people off guard. Vulkan will return VK_ERROR_OUT_OF_DATE_KHR from vkAcquireNextImageKHR or vkQueuePresentKHR when the window is resized, signaling you need to recreate:
+cVkResult result = vkAcquireNextImageKHR(...);
+if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    recreate_swapchain();
+    return;
+}
+
+Full Picture
+c// main.c
+
+int main(void) {
+    // one time init
+    create_instance();
+    select_physical_device();
+    create_logical_device();
+    create_surface();
+    create_swapchain();
+    create_image_views();
+    setup_dynamic_rendering();
+    create_graphics_pipeline();
+    create_command_pool();
+    allocate_command_buffers();
+    create_sync_objects();
+
+    // game loop
+    while (running) {
+        poll_input();
+        update(delta_time);
+        draw_frame();           // contains all per frame steps
+    }
+
+    // wait for GPU to finish before cleanup
+    vkDeviceWaitIdle(device);
+
+    // cleanup in reverse order of creation
+    cleanup();
+
+    return 0;
+}
+The vkDeviceWaitIdle before cleanup is important — you can't destroy Vulkan objects while the GPU is still using them.

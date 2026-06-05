@@ -181,3 +181,18 @@ Return codes from some OS functions, loop variables when negative makes sense
 size_t
 Only when calling C standard library or platform APIs that expect it
 malloc, fread, memset, some sizeof arithmetic
+
+: strncpy(dst, src, n)
+if src is shorter than n then the remainder is passed with null bytes
+if src is longer then it copes eactly n bytes and adds no null terminator
+
+char name[128];
+model->name[0] = '\0';
+strncpy(model->name, nodel->name, 127);
+
+or
+
+: strcpy(dst, src)
+copies chars from src until it hits null terminator then copies that null terminator
+so dst is always properly null terminated but no bounds checking
+strcpy(model->name, "Unnamed_model");

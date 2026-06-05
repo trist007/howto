@@ -1,3 +1,7 @@
+: msvc does not support Compound Literals (type_name) { initializer list }
+print_point((Point){ .x = 30, .y = 40});
+
+
 - when compiling use dynamic or static
 
 .dll — the actual dynamic library, loaded at runtime. It contains the compiled code and is required to run the program.

@@ -1,0 +1,82 @@
+1. vulkan-tutorial.com
+Best starting point, hands down.
+
+Walks you through everything from instance creation to a spinning textured cube
+Written in C++ but the concepts translate directly to C
+Very thorough explanations of why not just how
+Free, online: vulkan-tutorial.com
+
+
+2. The Khronos Vulkan Spec
+The ground truth — if you need to know exactly what something does, this is it.
+
+Every function, struct, enum documented precisely
+Searchable and well organized
+registry.khronos.org/vulkan/specs/latest/html/vkspec.html
+
+
+3. Vulkan Guide (vkguide.dev)
+Best second resource after the tutorial.
+
+More practical and opinionated than vulkan-tutorial.com
+Covers real engine patterns, not just hello triangle
+Covers modern Vulkan (dynamic rendering, etc.)
+vkguide.dev
+
+
+4. Khronos Vulkan Samples
+Official code samples from the Vulkan developers themselves.
+
+Real working code for specific features
+Good for looking up how a specific thing is done
+github.com/KhronosGroup/Vulkan-Samples
+
+
+5. GPU Info / gpuinfo.org
+Not documentation but invaluable.
+
+Shows you what extensions and features are actually supported across real hardware
+Essential before relying on any extension
+gpuinfo.org
+
+
+Recommended Order
+
+Start at vulkan-tutorial.com and build the triangle
+Keep the Khronos spec open as a reference while you code
+Move to vkguide.dev when you want to go beyond basics
+Check gpuinfo.org whenever you want to use an extension
+vulkan-tutorial use oop?11:52 AMYes, the tutorial uses C++ with some OOP — it wraps everything in a class:
+cppclass HelloTriangleApplication {
+public:
+    void run() {
+        initWindow();
+        initVulkan();
+        mainLoop();
+        cleanup();
+    }
+private:
+    VkInstance instance;
+    VkDevice device;
+    // ...
+};
+But it's pretty minimal OOP — it's really just using a class as a namespace to avoid globals. The actual Vulkan calls inside are all straight C-style function calls with structs, so the concepts translate directly to C.
+
+If You Want Pure C Examples
+vkguide.dev is more C-friendly in style, and for pure C there are some good GitHub resources:
+
+github.com/nicebyte/nicegfx — C-style Vulkan
+github.com/SaschaWillems/Vulkan — C++ but very straightforward, good for reference
+You can also just follow vulkan-tutorial and mentally flatten the class into plain functions/globals — it's a 1:1 translation
+
+
+The Translation is Simple
+cpp// Tutorial C++
+class App {
+    VkInstance instance;
+    void createInstance() { ... }
+};
+c// Your C equivalent
+VkInstance instance;
+void create_instance(void) { ... }
+The OOP in the tutorial is shallow enough that it shouldn't get in your way at all.

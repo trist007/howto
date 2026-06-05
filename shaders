@@ -1,0 +1,109 @@
+SDL_GPU
+
+vertex shader uniforms -> space1 register
+fragment shader uniforms -> space3 register
+fragment shader smaplers/textures -> space2 register
+
+: to make it dark modify fragment shader of bg and 3D model
+
+bg_fragment.hlsl
+Texture2D tex : register(t0, space2);
+SamplerState samp : register(s0, space2);
+
+cbuffer Uniforms : register(b0, space3)
+{
+    float ambientLight; // 0.0 = pitch black, 1.0 = full brightness
+};
+
+struct PSInput
+{
+    float4 pos : SV_Position;
+    float2 uv  : TEXCOORD0;
+};
+
+float4 main(PSInput input) : SV_Target
+{
+    return tex.Sample(samp, input.uv) * ambientLight;
+}
+
+void
+RenderBackground(Background *b, SDL_GPUCommandBuffer *cmd, SDL_GPUTexture *swapchain)
+{
+    float ambientLight = 0.2f;
+    //float ambientData[4] = { ambientLight, 0.0f, 0.0f, 0.0f };
+    
+    SDL_GPUColorTargetInfo bgColor = {};
+    bgColor.texture     = swapchain;
+    bgColor.load_op     = SDL_GPU_LOADOP_CLEAR;
+    bgColor.clear_color = {0,0,0,1};
+    bgColor.store_op    = SDL_GPU_STOREOP_STORE;
+    
+    SDL_GPURenderPass *bgPass = SDL_BeginGPURenderPass(cmd, &bgColor, 1, NULL);
+    SDL_BindGPUGraphicsPipeline(bgPass, b->backgroundPipeline);
+    SDL_GPUTextureSamplerBinding bgBinding = { b->backgroundTexture, b->backgroundSampler };
+    SDL_BindGPUFragmentSamplers(bgPass, 0, &bgBinding, 1);
+    
+    SDL_PushGPUFragmentUniformData(cmd, 0, &ambientLight, sizeof(float));  // here
+    
+    SDL_DrawGPUPrimitives(bgPass, 3, 1, 0, 0);
+    SDL_EndGPURenderPass(bgPass);
+}
+fragment.hlsl
+cbuffer FragUniforms : register(b0, space3)
+{
+    float4 color;
+    float  ambientLight;
+};
+
+float4 main() : SV_Target
+{
+    return color * ambientLight;
+}
+
+// compile: dxc -T ps_6_0 -E main fragment.hlsl -Fo fragment.dxil
+
+void
+RenderModel(Model *m, Player *p, SDL_GPUCommandBuffer *cmd, SDL_GPUTexture *swapchain, float *mvp)
+{
+    float ambientLight = 0.2f;
+    
+    SDL_GPUColorTargetInfo modelColor = {};
+    modelColor.texture  = swapchain;
+    modelColor.load_op  = SDL_GPU_LOADOP_LOAD;  // keep background
+    modelColor.store_op = SDL_GPU_STOREOP_STORE;
+    
+    SDL_GPUDepthStencilTargetInfo depth = {};
+    depth.texture      = m->depthTexture;
+    depth.load_op      = SDL_GPU_LOADOP_CLEAR;
+    depth.clear_depth  = 1.0f;
+    depth.store_op     = SDL_GPU_STOREOP_DONT_CARE;
+    
+    SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(cmd, &modelColor, 1, &depth);
+    SDL_BindGPUGraphicsPipeline(pass, m->pipeline);
+    
+    SDL_GPUBufferBinding vb = { m->vertexBuffer, 0 };
+    SDL_BindGPUVertexBuffers(pass, 0, &vb, 1);
+    SDL_GPUBufferBinding ib = { m->indexBuffer, 0 };
+    SDL_BindGPUIndexBuffer(pass, &ib, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+    
+    int jointCount    = m->skeleton.jointCount;
+    int uniformSize   = (16 + jointCount * 16) * sizeof(float);
+    memcpy(m->uniformBuffer,      mvp,            64);
+    memcpy(m->uniformBuffer + 16, m->pose.matrices, jointCount * 64);
+    
+    SDL_PushGPUVertexUniformData(cmd, 0, m->uniformBuffer, uniformSize);
+    
+    for(int i = 0; i < m->mesh.primitiveCount; i++)  // or primitiveCount if that's on the struct
+    {
+        Primitive *prim = &m->mesh.primitives[i];
+        float red = ((prim->color >> 0)  & 0xff) / 255.0f;
+        float green = ((prim->color >> 8)  & 0xff) / 255.0f;
+        float blue = ((prim->color >> 16) & 0xff) / 255.0f;
+        float col[5] = { red, green, blue, 1.0f, ambientLight };
+        SDL_PushGPUFragmentUniformData(cmd, 0, col, sizeof(col));
+        SDL_DrawGPUIndexedPrimitives(pass, prim->triCount * 3, 1, prim->triOffset * 3, 0, 0);
+    }
+    
+    SDL_EndGPURenderPass(pass);
+}
+need to make sure the uniform buffers for the fragments are set to 1
